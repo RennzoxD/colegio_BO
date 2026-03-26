@@ -91,4 +91,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _service.logout();
     state = AuthState();
   }
+
+  Future<bool> changePassword(String password) async {
+    final result = await _service.changePassword(password);
+    if (result['success'] == true) {
+      // Actualizar estado: ya no debe cambiar contraseña
+      if (state.user != null) {
+        state = AuthState(
+          user: state.user,
+          mustChangePassword: false,
+        );
+      }
+      return true;
+    }
+    state = state.copyWith(error: result['message']);
+    return false;
+  }
 }

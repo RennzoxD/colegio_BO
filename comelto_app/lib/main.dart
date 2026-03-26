@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'screens/auth/login_screen.dart';
+import 'screens/auth/splash_screen.dart';
+
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -19,8 +20,9 @@ class MyApp extends StatelessWidget {
           seedColor: const Color(0xFF1565C0),
         ),
         useMaterial3: true,
+        fontFamily: 'Roboto',
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

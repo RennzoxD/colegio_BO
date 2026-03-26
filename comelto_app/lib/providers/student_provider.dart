@@ -46,6 +46,10 @@ class StudentNotifier extends StateNotifier<StudentState> {
   final StudentService _service;
   StudentNotifier(this._service) : super(StudentState());
 
+void clearError() {
+  state = state.copyWith(error: null);
+}
+
   Future<void> load({String? q, String? nivel}) async {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _service.getStudents(q: q, nivel: nivel);
@@ -74,5 +78,24 @@ class StudentNotifier extends StateNotifier<StudentState> {
   Future<void> delete(int id) async {
     await _service.deleteStudent(id);
     await load();
+  }
+
+  Future<Map<String, dynamic>?> createAndReturn(
+      Map<String, dynamic> data) async {
+    state = state.copyWith(isLoading: true, error: null);
+    final result = await _service.createStudent(data);
+    if (result['success'] == true) {
+      // Recargar lista inmediatamente
+      final listResult = await _service.getStudents();
+      if (listResult['success']) {
+        state = state.copyWith(
+          isLoading: false,
+          students: listResult['students'],
+        );
+      }
+      return result['data'];
+    }
+    state = state.copyWith(isLoading: false, error: result['message']);
+    return null;
   }
 }

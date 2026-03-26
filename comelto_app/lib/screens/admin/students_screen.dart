@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/student_provider.dart';
 import '../../models/student_model.dart';
+import 'student_detail_screen.dart';
 
 class StudentsScreen extends ConsumerStatefulWidget {
   const StudentsScreen({super.key});
@@ -97,6 +98,7 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
   }
 
   void _showCreateDialog(BuildContext context) {
+    ref.read(studentProvider.notifier).clearError();
     final nombres   = TextEditingController();
     final apellidos = TextEditingController();
     final curso     = TextEditingController();
@@ -152,7 +154,8 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                   const SnackBar(content: Text('Completa los campos obligatorios')));
                 return;
               }
-              final ok = await ref.read(studentProvider.notifier).create({
+              final result = await ref.read(studentProvider.notifier)
+                  .createAndReturn({
                 'nombres':      nombres.text.trim(),
                 'apellidos':    apellidos.text.trim(),
                 'nivel':        nivel,
@@ -162,11 +165,59 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                 'anio_ingreso': anio,
                 'mes_ingreso':  mes,
               });
-              if (ok && ctx.mounted) {
+
+              if (result != null && ctx.mounted) {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('✅ Estudiante creado'),
-                    backgroundColor: Colors.green));
+                // Mostrar credenciales
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Row(children: [
+                      Icon(Icons.check_circle, color: Colors.green),
+                      SizedBox(width: 8),
+                      Text('Estudiante Creado'),
+                    ]),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Credenciales de acceso:',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        _CredentialRow(
+                          icon: Icons.person,
+                          label: 'Usuario',
+                          value: result['user']?['username'] ?? '-'),
+                        const SizedBox(height: 8),
+                        _CredentialRow(
+                          icon: Icons.lock,
+                          label: 'Contraseña temporal',
+                          value: result['password_temp'] ?? '-'),
+                        const SizedBox(height: 8),
+                        _CredentialRow(
+                          icon: Icons.badge,
+                          label: 'Código',
+                          value: result['student']?['codigo'] ?? '-'),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.orange[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange)),
+                          child: const Text(
+                            '⚠️ Guarda estas credenciales.\nEl estudiante deberá cambiar su contraseña al primer ingreso.',
+                            style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Entendido')),
+                    ],
+                  ),
+                );
               }
             },
             child: const Text('Crear')),
@@ -192,16 +243,27 @@ class _StudentTile extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: ListTile(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StudentDetailScreen(student: student))),
         leading: CircleAvatar(
           backgroundColor: color,
-          child: Text(student.nombres[0],
-            style: const TextStyle(color: Colors.white,
-                fontWeight: FontWeight.bold)),
+          child: Text(
+            student.nombres.isNotEmpty ? student.nombres[0] : '?', // ✅ FIX
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold),
+          ),
         ),
-        title: Text(student.nombreCompleto,
-          style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${student.codigo} • ${student.nivel} '
-            '${student.curso}-${student.paralelo}'),
+        title: Text(
+          student.nombreCompleto,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          '${student.codigo} • ${student.nivel} '
+          '${student.curso}-${student.paralelo}',
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -214,8 +276,11 @@ class _StudentTile extends ConsumerWidget {
               child: Text(
                 student.activo ? 'Activo' : 'Inactivo',
                 style: TextStyle(
-                  color: student.activo ? Colors.green[800] : Colors.red[800],
-                  fontSize: 12),
+                  color: student.activo
+                      ? Colors.green[800]
+                      : Colors.red[800],
+                  fontSize: 12,
+                ),
               ),
             ),
             IconButton(
@@ -233,19 +298,74 @@ class _StudentTile extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('¿Eliminar estudiante?'),
-        content: Text('Se eliminará a ${student.nombreCompleto}. '
-            'Esta acción no se puede deshacer.'),
+        content: Text(
+          'Se eliminará a ${student.nombreCompleto}. '
+          'Esta acción no se puede deshacer.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               ref.read(studentProvider.notifier).delete(student.id);
               Navigator.pop(ctx);
             },
-            child: const Text('Eliminar',
-                style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Eliminar',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+////////////////////////////////////////////////////////
+/// ✅ AHORA SÍ: FUERA DE TODAS LAS CLASES
+////////////////////////////////////////////////////////
+
+class _CredentialRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _CredentialRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF1565C0)),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ],
           ),
         ],
       ),
