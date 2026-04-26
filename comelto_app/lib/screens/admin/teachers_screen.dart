@@ -13,6 +13,7 @@ class TeachersScreen extends ConsumerStatefulWidget {
 
 class _TeachersScreenState extends ConsumerState<TeachersScreen> {
   final _searchCtrl = TextEditingController();
+  String? _estadoFiltro;
 
   @override
   void initState() {
@@ -21,220 +22,266 @@ class _TeachersScreenState extends ConsumerState<TeachersScreen> {
   }
 
   @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = ref.watch(teacherProvider);
+    final total = state.teachers.length;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF0F4F8),
       appBar: AppBar(
         title: const Text('Docentes'),
-        backgroundColor: const Color(0xFF388E3C),
+        backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateDialog(context),
-        backgroundColor: const Color(0xFF388E3C),
-        child: const Icon(Icons.add, color: Colors.white),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Actualizar',
+            onPressed: () => ref
+                .read(teacherProvider.notifier)
+                .load(q: _searchCtrl.text),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Buscar por nombre o RDA...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-              onChanged: (v) =>
-                  ref.read(teacherProvider.notifier).load(q: v),
+          // Banner
+          Container(
+            width: double.infinity,
+            color: const Color(0xFF2E7D32),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.school_rounded,
+                          color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        state.isLoading
+                            ? 'Cargando...'
+                            : '$total docente${total == 1 ? '' : 's'}',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.info_outline,
+                    color: Colors.white54, size: 14),
+                const SizedBox(width: 4),
+                const Text(
+                  'Gestión desde la web',
+                  style: TextStyle(color: Colors.white54, fontSize: 11),
+                ),
+              ],
             ),
           ),
+
+          // Barra de búsqueda y filtro
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar por nombre o CI...',
+                      hintStyle: const TextStyle(fontSize: 13),
+                      prefixIcon: const Icon(Icons.search,
+                          color: Color(0xFF2E7D32), size: 20),
+                      suffixIcon: _searchCtrl.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() {});
+                                ref
+                                    .read(teacherProvider.notifier)
+                                    .load();
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            const BorderSide(color: Color(0xFF2E7D32)),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF5F7FA),
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 0),
+                    ),
+                    onChanged: (v) {
+                      setState(() {});
+                      ref.read(teacherProvider.notifier).load(q: v);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F7FA),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String?>(
+                      value: _estadoFiltro,
+                      hint: const Text('RDA',
+                          style: TextStyle(fontSize: 13)),
+                      icon: const Icon(Icons.keyboard_arrow_down,
+                          size: 18),
+                      items: const [
+                        DropdownMenuItem(
+                            value: null, child: Text('Todos')),
+                        DropdownMenuItem(
+                            value: 'VIGENTE',
+                            child: Text('Vigente')),
+                        DropdownMenuItem(
+                            value: 'OBSERVADO',
+                            child: Text('Observado')),
+                        DropdownMenuItem(
+                            value: 'VENCIDO',
+                            child: Text('Vencido')),
+                      ],
+                      onChanged: (v) {
+                        setState(() => _estadoFiltro = v);
+                        // Nota: aplica filtro local si el provider lo soporta
+                        ref
+                            .read(teacherProvider.notifier)
+                            .load(q: _searchCtrl.text);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Barra de resumen RDA
+          if (!state.isLoading && state.teachers.isNotEmpty)
+            _RdaSummaryBar(teachers: state.teachers),
+
+          // Lista
           Expanded(
             child: state.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: CircularProgressIndicator(
+                        color: Color(0xFF2E7D32)))
                 : state.error != null
-                    ? Center(child: Text(state.error!,
-                        style: const TextStyle(color: Colors.red)))
+                    ? _ErrorView(
+                        message: state.error!,
+                        color: const Color(0xFF2E7D32),
+                        onRetry: () =>
+                            ref.read(teacherProvider.notifier).load())
                     : state.teachers.isEmpty
-                        ? const Center(child: Text('No hay docentes'))
+                        ? _EmptyView(
+                            hasFilter: _searchCtrl.text.isNotEmpty)
                         : ListView.builder(
+                            padding: const EdgeInsets.only(
+                                top: 8, bottom: 24),
                             itemCount: state.teachers.length,
                             itemBuilder: (ctx, i) =>
-                                _TeacherTile(teacher: state.teachers[i]),
+                                _TeacherTile(
+                                    teacher: state.teachers[i]),
                           ),
           ),
         ],
       ),
     );
   }
+}
 
-  void _showCreateDialog(BuildContext context) {
-    ref.read(teacherProvider.notifier).clearError();
-    final nombres    = TextEditingController();
-    final apellidos  = TextEditingController();
-    final email      = TextEditingController();
-    final telefono   = TextEditingController();
-    final ci         = TextEditingController();
-    final rdaNumero  = TextEditingController();
-    String rdaEstado = 'VIGENTE';
-    String estado    = 'activo';
-    final anio       = DateTime.now().year.toString();
-    final mes        = DateTime.now().month.toString().padLeft(2, '0');
+// ─── Barra resumen RDA ──────────────────────────────────────────
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nuevo Docente'),
-        content: SingleChildScrollView(
-          child: StatefulBuilder(
-            builder: (ctx, setSt) => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: nombres,
-                    decoration:
-                        const InputDecoration(labelText: 'Nombres *')),
-                TextField(controller: apellidos,
-                    decoration:
-                        const InputDecoration(labelText: 'Apellidos *')),
-                TextField(controller: email,
-                    decoration:
-                        const InputDecoration(labelText: 'Email *'),
-                    keyboardType: TextInputType.emailAddress),
-                TextField(controller: telefono,
-                    decoration:
-                        const InputDecoration(labelText: 'Teléfono')),
-                TextField(controller: ci,
-                    decoration: const InputDecoration(labelText: 'CI *')),
-                TextField(controller: rdaNumero,
-                    decoration:
-                        const InputDecoration(labelText: 'RDA Número *')),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: rdaEstado,
-                  decoration:
-                      const InputDecoration(labelText: 'Estado RDA'),
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'VIGENTE', child: Text('Vigente')),
-                    DropdownMenuItem(
-                        value: 'OBSERVADO', child: Text('Observado')),
-                    DropdownMenuItem(
-                        value: 'VENCIDO', child: Text('Vencido')),
-                  ],
-                  onChanged: (v) => setSt(() => rdaEstado = v!),
-                ),
-                DropdownButtonFormField<String>(
-                  value: estado,
-                  decoration: const InputDecoration(labelText: 'Estado'),
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'activo', child: Text('Activo')),
-                    DropdownMenuItem(
-                        value: 'licencia', child: Text('Licencia')),
-                    DropdownMenuItem(
-                        value: 'inactivo', child: Text('Inactivo')),
-                  ],
-                  onChanged: (v) => setSt(() => estado = v!),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nombres.text.isEmpty || apellidos.text.isEmpty ||
-                  email.text.isEmpty  || ci.text.isEmpty ||
-                  rdaNumero.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Completa los campos obligatorios')));
-                return;
-              }
+class _RdaSummaryBar extends StatelessWidget {
+  final List<TeacherModel> teachers;
+  const _RdaSummaryBar({required this.teachers});
 
-              final result = await ref.read(teacherProvider.notifier)
-                  .createAndReturn({
-                'nombres':      nombres.text.trim(),
-                'apellidos':    apellidos.text.trim(),
-                'email':        email.text.trim(),
-                'telefono':     telefono.text.trim(),
-                'ci':           ci.text.trim(),
-                'rda_numero':   rdaNumero.text.trim(),
-                'rda_estado':   rdaEstado,
-                'estado':       estado,
-                'anio_ingreso': anio,
-                'mes_ingreso':  mes,
-              });
-
-              if (result != null && ctx.mounted) {
-                Navigator.pop(ctx);
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Row(children: [
-                      Icon(Icons.check_circle, color: Colors.green),
-                      SizedBox(width: 8),
-                      Text('Docente Creado'),
-                    ]),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Credenciales de acceso:',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 12),
-                        _CredentialRow(
-                          icon: Icons.person,
-                          label: 'Usuario',
-                          value: result['user']?['username'] ?? '-'),
-                        const SizedBox(height: 8),
-                        _CredentialRow(
-                          icon: Icons.lock,
-                          label: 'Contraseña temporal',
-                          value: result['password_temp'] ?? '-'),
-                        const SizedBox(height: 8),
-                        _CredentialRow(
-                          icon: Icons.email,
-                          label: 'Email',
-                          value: result['teacher']?['email'] ?? '-'),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.orange[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.orange)),
-                          child: const Text(
-                            '⚠️ Guarda estas credenciales.\nEl docente deberá cambiar su contraseña al primer ingreso.',
-                            style: TextStyle(fontSize: 12)),
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Entendido')),
-                    ],
-                  ),
-                );
-              } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(
-                    ref.read(teacherProvider).error ?? 'Error al crear'),
-                  backgroundColor: Colors.red));
-              }
-            },
-            child: const Text('Crear')),
+  @override
+  Widget build(BuildContext context) {
+    int vigente = 0, observado = 0, vencido = 0;
+    for (final t in teachers) {
+      switch (t.rdaEstado) {
+        case 'VIGENTE':
+          vigente++;
+          break;
+        case 'OBSERVADO':
+          observado++;
+          break;
+        default:
+          vencido++;
+      }
+    }
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: Row(
+        children: [
+          _RdaChip('Vigente', vigente, Colors.green),
+          const SizedBox(width: 6),
+          _RdaChip('Observado', observado, Colors.orange),
+          const SizedBox(width: 6),
+          _RdaChip('Vencido', vencido, Colors.red),
         ],
       ),
     );
   }
 }
+
+class _RdaChip extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  const _RdaChip(this.label, this.count, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        '$label: $count',
+        style: TextStyle(
+            color: color, fontSize: 11, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+// ─── Tile de docente ────────────────────────────────────────────
 
 class _TeacherTile extends ConsumerWidget {
   final TeacherModel teacher;
@@ -242,72 +289,144 @@ class _TeacherTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final color = switch (teacher.rdaEstado) {
-      'VIGENTE'   => Colors.green,
+    final rdaColor = switch (teacher.rdaEstado) {
+      'VIGENTE' => Colors.green,
       'OBSERVADO' => Colors.orange,
-      _           => Colors.red,
+      _ => Colors.red,
+    };
+    final estadoColor = switch (teacher.estado) {
+      'activo' => Colors.green,
+      'licencia' => Colors.blue,
+      _ => Colors.grey,
     };
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
+      elevation: 1,
+      shadowColor: Colors.black12,
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TeacherDetailScreen(teacher: teacher))),
-        leading: CircleAvatar(
-          backgroundColor: const Color(0xFF388E3C),
-          child: Text(teacher.nombres[0],
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold)),
-        ),
-        title: Text(teacher.nombreCompleto,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${teacher.email} • CI: ${teacher.ci ?? "-"}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
+              builder: (_) =>
+                  TeacherDetailScreen(teacher: teacher))),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: const Color(0xFF2E7D32),
+                child: Text(
+                  teacher.nombres.isNotEmpty
+                      ? teacher.nombres[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18),
+                ),
               ),
-              child: Text(teacher.rdaEstado,
-                  style: TextStyle(color: color, fontSize: 11,
-                      fontWeight: FontWeight.bold)),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () => _confirmDelete(context, ref),
-            ),
-          ],
+              const SizedBox(width: 12),
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      teacher.nombreCompleto,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: Color(0xFF1B5E20)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      teacher.email,
+                      style: TextStyle(
+                          fontSize: 11, color: Colors.grey[500]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        _MiniChip(
+                          label: 'RDA: ${teacher.rdaEstado}',
+                          color: rdaColor,
+                        ),
+                        const SizedBox(width: 4),
+                        _MiniChip(
+                          label: teacher.estado
+                              .substring(0, 1)
+                              .toUpperCase() +
+                              teacher.estado.substring(1),
+                          color: estadoColor,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Flecha
+              Icon(Icons.chevron_right,
+                  color: Colors.grey[400], size: 20),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Eliminar docente?'),
-        content: Text(
-            'Se eliminará a ${teacher.nombreCompleto}. Esta acción no se puede deshacer.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            style:
-                ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              ref.read(teacherProvider.notifier).delete(teacher.id);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Eliminar',
-                style: TextStyle(color: Colors.white)),
+class _MiniChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _MiniChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            fontSize: 10,
+            color: color.withOpacity(0.85),
+            fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+// ─── Vistas auxiliares ──────────────────────────────────────────
+
+class _EmptyView extends StatelessWidget {
+  final bool hasFilter;
+  const _EmptyView({required this.hasFilter});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_off_rounded,
+              size: 56, color: Colors.grey[300]),
+          const SizedBox(height: 12),
+          Text(
+            hasFilter
+                ? 'No se encontraron resultados'
+                : 'No hay docentes registrados',
+            style: TextStyle(color: Colors.grey[500], fontSize: 14),
           ),
         ],
       ),
@@ -315,33 +434,32 @@ class _TeacherTile extends ConsumerWidget {
   }
 }
 
-class _CredentialRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  const _CredentialRow({
-      required this.icon, required this.label, required this.value});
+class _ErrorView extends StatelessWidget {
+  final String message;
+  final Color color;
+  final VoidCallback onRetry;
+  const _ErrorView(
+      {required this.message, required this.color, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8)),
-      child: Row(
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF388E3C)),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                style: const TextStyle(fontSize: 11, color: Colors.grey)),
-              Text(value,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 15)),
-            ],
+          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const SizedBox(height: 12),
+          Text(message,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            style:
+                ElevatedButton.styleFrom(backgroundColor: color),
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            label: const Text('Reintentar',
+                style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

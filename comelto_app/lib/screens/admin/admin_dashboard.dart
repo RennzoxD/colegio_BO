@@ -32,21 +32,22 @@ class AdminDashboard extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Panel Administrativo',
-            style: TextStyle(
-                color: Color(0xFF1A237E),
-                fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Panel Administrativo',
+          style: TextStyle(
+              color: Color(0xFF1A237E), fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.account_circle_outlined,
                 color: Color(0xFF1A237E)),
-            onPressed: () => Navigator.push(context,
+            onPressed: () => Navigator.push(
+                context,
                 MaterialPageRoute(
                     builder: (_) => const ProfileScreen())),
           ),
           IconButton(
-            icon: const Icon(Icons.logout,
-                color: Color(0xFF1A237E)),
+            icon: const Icon(Icons.logout, color: Color(0xFF1A237E)),
             onPressed: () => _confirmLogout(context, ref),
           ),
         ],
@@ -56,7 +57,7 @@ class AdminDashboard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header card
+            // ── Header card ──────────────────────────────────────
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -73,8 +74,7 @@ class AdminDashboard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1565C0)
-                        .withOpacity(0.4),
+                    color: const Color(0xFF1565C0).withOpacity(0.4),
                     blurRadius: 15,
                     offset: const Offset(0, 6),
                   ),
@@ -104,14 +104,12 @@ class AdminDashboard extends ConsumerWidget {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Bienvenido,',
                           style: TextStyle(
-                              color:
-                                  Colors.white.withOpacity(0.7),
+                              color: Colors.white.withOpacity(0.7),
                               fontSize: 13),
                         ),
                         Text(
@@ -128,30 +126,25 @@ class AdminDashboard extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 3),
                           decoration: BoxDecoration(
-                            color:
-                                Colors.white.withOpacity(0.2),
-                            borderRadius:
-                                BorderRadius.circular(12),
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             roleLabel,
                             style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12),
+                                color: Colors.white, fontSize: 12),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  // Fecha
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
                         _getDayName(),
                         style: TextStyle(
-                            color:
-                                Colors.white.withOpacity(0.7),
+                            color: Colors.white.withOpacity(0.7),
                             fontSize: 12),
                       ),
                       Text(
@@ -166,9 +159,35 @@ class AdminDashboard extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // Título sección
+            // ── Aviso de modo lectura ─────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8E1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFFCA28)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.smartphone_rounded,
+                      color: Color(0xFFF57F17), size: 18),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'La app móvil es de consulta. Para crear o editar registros, usa la plataforma web.',
+                      style: TextStyle(
+                          fontSize: 12, color: Color(0xFF6D4C41)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Módulos ───────────────────────────────────────────
             const Text(
               'Gestión Escolar',
               style: TextStyle(
@@ -178,7 +197,6 @@ class AdminDashboard extends ConsumerWidget {
             ),
             const SizedBox(height: 14),
 
-            // Grid principal
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -190,68 +208,68 @@ class AdminDashboard extends ConsumerWidget {
                 _AdminCard(
                   icon: Icons.people_alt_rounded,
                   label: 'Estudiantes',
-                  subtitle: 'Gestionar alumnos',
+                  subtitle: 'Ver listado',
                   color: const Color(0xFF1976D2),
-                  onTap: () => Navigator.push(context,
+                  onTap: () => Navigator.push(
+                      context,
                       MaterialPageRoute(
-                          builder: (_) =>
-                              const StudentsScreen())),
+                          builder: (_) => const StudentsScreen())),
                 ),
                 _AdminCard(
                   icon: Icons.school_rounded,
                   label: 'Docentes',
-                  subtitle: 'Gestionar profesores',
+                  subtitle: 'Ver listado',
                   color: const Color(0xFF2E7D32),
-                  onTap: () => Navigator.push(context,
+                  onTap: () => Navigator.push(
+                      context,
                       MaterialPageRoute(
-                          builder: (_) =>
-                              const TeachersScreen())),
+                          builder: (_) => const TeachersScreen())),
                 ),
                 _AdminCard(
                   icon: Icons.class_rounded,
                   label: 'Secciones',
-                  subtitle: 'Ver aulas y grupos',
+                  subtitle: 'Aulas y grupos',
                   color: const Color(0xFFE65100),
-                  onTap: () => Navigator.push(context,
+                  onTap: () => Navigator.push(
+                      context,
                       MaterialPageRoute(
-                          builder: (_) =>
-                              const SectionsScreen())),
+                          builder: (_) => const SectionsScreen())),
                 ),
                 _AdminCard(
                   icon: Icons.account_balance_wallet_rounded,
                   label: 'Finanzas',
                   subtitle: 'Pagos y cuentas',
                   color: const Color(0xFF6A1B9A),
-                  onTap: () => Navigator.push(context,
+                  onTap: () => Navigator.push(
+                      context,
                       MaterialPageRoute(
-                          builder: (_) =>
-                              const FinanceScreen())),
+                          builder: (_) => const FinanceScreen())),
                 ),
                 _AdminCard(
                   icon: Icons.assignment_rounded,
                   label: 'Actas',
                   subtitle: 'Notas y evaluaciones',
                   color: const Color(0xFFB71C1C),
-                  onTap: () => Navigator.push(context,
+                  onTap: () => Navigator.push(
+                      context,
                       MaterialPageRoute(
-                          builder: (_) =>
-                              const ActasScreen())),
+                          builder: (_) => const ActasScreen())),
                 ),
                 _AdminCard(
                   icon: Icons.bar_chart_rounded,
                   label: 'Reportes',
                   subtitle: 'Estadísticas',
                   color: const Color(0xFF00695C),
-                  onTap: () => Navigator.push(context,
+                  onTap: () => Navigator.push(
+                      context,
                       MaterialPageRoute(
-                          builder: (_) =>
-                              const ReportsScreen())),
+                          builder: (_) => const ReportsScreen())),
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
-            // Accesos rápidos
+            // ── Accesos rápidos ───────────────────────────────────
             const Text(
               'Accesos Rápidos',
               style: TextStyle(
@@ -264,10 +282,11 @@ class AdminDashboard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: _QuickAction(
-                    icon: Icons.person_add_rounded,
-                    label: 'Nuevo Estudiante',
+                    icon: Icons.people_alt_rounded,
+                    label: 'Ver Estudiantes',
                     color: const Color(0xFF1976D2),
-                    onTap: () => Navigator.push(context,
+                    onTap: () => Navigator.push(
+                        context,
                         MaterialPageRoute(
                             builder: (_) =>
                                 const StudentsScreen())),
@@ -279,7 +298,8 @@ class AdminDashboard extends ConsumerWidget {
                     icon: Icons.warning_amber_rounded,
                     label: 'Pagos Vencidos',
                     color: const Color(0xFFB71C1C),
-                    onTap: () => Navigator.push(context,
+                    onTap: () => Navigator.push(
+                        context,
                         MaterialPageRoute(
                             builder: (_) =>
                                 const FinanceScreen())),
@@ -291,7 +311,8 @@ class AdminDashboard extends ConsumerWidget {
                     icon: Icons.analytics_rounded,
                     label: 'Reportes',
                     color: const Color(0xFF00695C),
-                    onTap: () => Navigator.push(context,
+                    onTap: () => Navigator.push(
+                        context,
                         MaterialPageRoute(
                             builder: (_) =>
                                 const ReportsScreen())),
@@ -335,9 +356,7 @@ class AdminDashboard extends ConsumerWidget {
                     builder: (_) => const _LogoutRedirect()),
                 (_) => false,
               );
-              await ref
-                  .read(authProvider.notifier)
-                  .logout();
+              await ref.read(authProvider.notifier).logout();
             },
             child: const Text('Cerrar sesión',
                 style: TextStyle(color: Colors.white)),
@@ -348,7 +367,6 @@ class AdminDashboard extends ConsumerWidget {
   }
 }
 
-// Widget temporal para evitar el null check error durante logout
 class _LogoutRedirect extends ConsumerWidget {
   const _LogoutRedirect();
 
@@ -405,15 +423,14 @@ class _AdminCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Color(0xFF1A237E))),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Color(0xFF1A237E))),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[500])),
+                      style: TextStyle(
+                          fontSize: 11, color: Colors.grey[500])),
                 ],
               ),
             ],
@@ -446,18 +463,17 @@ class _QuickAction extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-              vertical: 14, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
           child: Column(
             children: [
               Icon(icon, color: color, size: 24),
               const SizedBox(height: 6),
               Text(label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 11,
-                    color: color,
-                    fontWeight: FontWeight.w600)),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: color,
+                      fontWeight: FontWeight.w600)),
             ],
           ),
         ),

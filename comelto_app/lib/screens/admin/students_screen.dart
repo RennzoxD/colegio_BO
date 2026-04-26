@@ -22,25 +22,81 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
   }
 
   @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = ref.watch(studentProvider);
+    final total = state.students.length;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF0F4F8),
       appBar: AppBar(
         title: const Text('Estudiantes'),
         backgroundColor: const Color(0xFF1565C0),
         foregroundColor: Colors.white,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateDialog(context),
-        backgroundColor: const Color(0xFF1565C0),
-        child: const Icon(Icons.add, color: Colors.white),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Actualizar',
+            onPressed: () => ref
+                .read(studentProvider.notifier)
+                .load(q: _searchCtrl.text, nivel: _nivelFiltro),
+          ),
+        ],
       ),
       body: Column(
         children: [
+          // Banner informativo
+          Container(
+            width: double.infinity,
+            color: const Color(0xFF1565C0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.people_alt_rounded,
+                          color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        state.isLoading
+                            ? 'Cargando...'
+                            : '$total estudiante${total == 1 ? '' : 's'}',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.info_outline, color: Colors.white54, size: 14),
+                const SizedBox(width: 4),
+                const Text(
+                  'Gestión desde la web',
+                  style: TextStyle(color: Colors.white54, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+
           // Barra de búsqueda y filtro
-          Padding(
-            padding: const EdgeInsets.all(12),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
             child: Row(
               children: [
                 Expanded(
@@ -48,184 +104,178 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                     controller: _searchCtrl,
                     decoration: InputDecoration(
                       hintText: 'Buscar por nombre o código...',
-                      prefixIcon: const Icon(Icons.search),
+                      hintStyle: const TextStyle(fontSize: 13),
+                      prefixIcon: const Icon(Icons.search,
+                          color: Color(0xFF1565C0), size: 20),
+                      suffixIcon: _searchCtrl.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                ref
+                                    .read(studentProvider.notifier)
+                                    .load(nivel: _nivelFiltro);
+                              },
+                            )
+                          : null,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            const BorderSide(color: Color(0xFF1565C0)),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF5F7FA),
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 0),
                     ),
-                    onChanged: (v) => ref.read(studentProvider.notifier)
-                        .load(q: v, nivel: _nivelFiltro),
+                    onChanged: (v) {
+                      setState(() {});
+                      ref
+                          .read(studentProvider.notifier)
+                          .load(q: v, nivel: _nivelFiltro);
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
-                DropdownButton<String?>(
-                  value: _nivelFiltro,
-                  hint: const Text('Nivel'),
-                  items: const [
-                    DropdownMenuItem(value: null,         child: Text('Todos')),
-                    DropdownMenuItem(value: 'inicial',    child: Text('Inicial')),
-                    DropdownMenuItem(value: 'primaria',   child: Text('Primaria')),
-                    DropdownMenuItem(value: 'secundaria', child: Text('Secundaria')),
-                  ],
-                  onChanged: (v) {
-                    setState(() => _nivelFiltro = v);
-                    ref.read(studentProvider.notifier)
-                        .load(q: _searchCtrl.text, nivel: v);
-                  },
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F7FA),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String?>(
+                      value: _nivelFiltro,
+                      hint: const Text('Nivel',
+                          style: TextStyle(fontSize: 13)),
+                      icon: const Icon(Icons.keyboard_arrow_down,
+                          size: 18),
+                      items: const [
+                        DropdownMenuItem(
+                            value: null, child: Text('Todos')),
+                        DropdownMenuItem(
+                            value: 'inicial',
+                            child: Text('Inicial')),
+                        DropdownMenuItem(
+                            value: 'primaria',
+                            child: Text('Primaria')),
+                        DropdownMenuItem(
+                            value: 'secundaria',
+                            child: Text('Secundaria')),
+                      ],
+                      onChanged: (v) {
+                        setState(() => _nivelFiltro = v);
+                        ref
+                            .read(studentProvider.notifier)
+                            .load(q: _searchCtrl.text, nivel: v);
+                      },
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
 
+          // Chips de nivel rápido
+          if (!state.isLoading && state.students.isNotEmpty)
+            _LevelSummaryBar(students: state.students),
+
           // Lista
           Expanded(
             child: state.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : state.error != null
-                ? Center(child: Text(state.error!,
-                    style: const TextStyle(color: Colors.red)))
-                : state.students.isEmpty
-                  ? const Center(child: Text('No hay estudiantes'))
-                  : ListView.builder(
-                      itemCount: state.students.length,
-                      itemBuilder: (ctx, i) =>
-                          _StudentTile(student: state.students[i]),
-                    ),
+                ? const Center(
+                    child: CircularProgressIndicator(
+                        color: Color(0xFF1565C0)))
+                : state.error != null
+                    ? _ErrorView(
+                        message: state.error!,
+                        onRetry: () => ref
+                            .read(studentProvider.notifier)
+                            .load())
+                    : state.students.isEmpty
+                        ? _EmptyView(hasFilter: _searchCtrl.text.isNotEmpty || _nivelFiltro != null)
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(
+                                top: 8, bottom: 80),
+                            itemCount: state.students.length,
+                            itemBuilder: (ctx, i) => _StudentTile(
+                                student: state.students[i]),
+                          ),
           ),
-        ],
-      ),
-    );
-  }
-
-  void _showCreateDialog(BuildContext context) {
-    ref.read(studentProvider.notifier).clearError();
-    final nombres   = TextEditingController();
-    final apellidos = TextEditingController();
-    final curso     = TextEditingController();
-    final paralelo  = TextEditingController();
-    final email     = TextEditingController();
-    String nivel    = 'primaria';
-    final anio      = DateTime.now().year.toString();
-    final mes       = DateTime.now().month.toString().padLeft(2, '0');
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nuevo Estudiante'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nombres,
-                decoration: const InputDecoration(labelText: 'Nombres *')),
-              TextField(controller: apellidos,
-                decoration: const InputDecoration(labelText: 'Apellidos *')),
-              const SizedBox(height: 8),
-              StatefulBuilder(
-                builder: (ctx, setSt) => DropdownButtonFormField<String>(
-                  value: nivel,
-                  decoration: const InputDecoration(labelText: 'Nivel'),
-                  items: const [
-                    DropdownMenuItem(value: 'inicial',    child: Text('Inicial')),
-                    DropdownMenuItem(value: 'primaria',   child: Text('Primaria')),
-                    DropdownMenuItem(value: 'secundaria', child: Text('Secundaria')),
-                  ],
-                  onChanged: (v) => setSt(() => nivel = v!),
-                ),
-              ),
-              TextField(controller: curso,
-                decoration: const InputDecoration(labelText: 'Curso *')),
-              TextField(controller: paralelo,
-                decoration: const InputDecoration(labelText: 'Paralelo *')),
-              TextField(controller: email,
-                decoration: const InputDecoration(labelText: 'Email (opcional)')),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nombres.text.isEmpty || apellidos.text.isEmpty ||
-                  curso.text.isEmpty  || paralelo.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Completa los campos obligatorios')));
-                return;
-              }
-              final result = await ref.read(studentProvider.notifier)
-                  .createAndReturn({
-                'nombres':      nombres.text.trim(),
-                'apellidos':    apellidos.text.trim(),
-                'nivel':        nivel,
-                'curso':        curso.text.trim(),
-                'paralelo':     paralelo.text.trim(),
-                'email':        email.text.trim().isEmpty ? null : email.text.trim(),
-                'anio_ingreso': anio,
-                'mes_ingreso':  mes,
-              });
-
-              if (result != null && ctx.mounted) {
-                Navigator.pop(ctx);
-                // Mostrar credenciales
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Row(children: [
-                      Icon(Icons.check_circle, color: Colors.green),
-                      SizedBox(width: 8),
-                      Text('Estudiante Creado'),
-                    ]),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Credenciales de acceso:',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 12),
-                        _CredentialRow(
-                          icon: Icons.person,
-                          label: 'Usuario',
-                          value: result['user']?['username'] ?? '-'),
-                        const SizedBox(height: 8),
-                        _CredentialRow(
-                          icon: Icons.lock,
-                          label: 'Contraseña temporal',
-                          value: result['password_temp'] ?? '-'),
-                        const SizedBox(height: 8),
-                        _CredentialRow(
-                          icon: Icons.badge,
-                          label: 'Código',
-                          value: result['student']?['codigo'] ?? '-'),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.orange[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.orange)),
-                          child: const Text(
-                            '⚠️ Guarda estas credenciales.\nEl estudiante deberá cambiar su contraseña al primer ingreso.',
-                            style: TextStyle(fontSize: 12)),
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Entendido')),
-                    ],
-                  ),
-                );
-              }
-            },
-            child: const Text('Crear')),
         ],
       ),
     );
   }
 }
+
+// ─── Barra de resumen por nivel ────────────────────────────────
+
+class _LevelSummaryBar extends StatelessWidget {
+  final List<StudentModel> students;
+  const _LevelSummaryBar({required this.students});
+
+  @override
+  Widget build(BuildContext context) {
+    final counts = <String, int>{
+      'inicial': 0,
+      'primaria': 0,
+      'secundaria': 0,
+    };
+    for (final s in students) {
+      counts[s.nivel] = (counts[s.nivel] ?? 0) + 1;
+    }
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: Row(
+        children: [
+          _LevelChip('Inicial', counts['inicial']!, Colors.orange),
+          const SizedBox(width: 6),
+          _LevelChip('Primaria', counts['primaria']!, Colors.blue),
+          const SizedBox(width: 6),
+          _LevelChip(
+              'Secundaria', counts['secundaria']!, Colors.green),
+        ],
+      ),
+    );
+  }
+}
+
+class _LevelChip extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  const _LevelChip(this.label, this.count, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        '$label: $count',
+        style: TextStyle(
+            color: color, fontSize: 11, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+// ─── Tile de estudiante ─────────────────────────────────────────
 
 class _StudentTile extends ConsumerWidget {
   final StudentModel student;
@@ -234,138 +284,197 @@ class _StudentTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final color = switch (student.nivel) {
-      'inicial'    => Colors.orange,
-      'primaria'   => Colors.blue,
+      'inicial' => Colors.orange,
+      'primaria' => Colors.blue,
       'secundaria' => Colors.green,
-      _            => Colors.grey,
+      _ => Colors.grey,
     };
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
+      elevation: 1,
+      shadowColor: Colors.black12,
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => StudentDetailScreen(student: student))),
-        leading: CircleAvatar(
-          backgroundColor: color,
-          child: Text(
-            student.nombres.isNotEmpty ? student.nombres[0] : '?', // ✅ FIX
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold),
-          ),
-        ),
-        title: Text(
-          student.nombreCompleto,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          '${student.codigo} • ${student.nivel} '
-          '${student.curso}-${student.paralelo}',
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: student.activo ? Colors.green[100] : Colors.red[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                student.activo ? 'Activo' : 'Inactivo',
-                style: TextStyle(
-                  color: student.activo
-                      ? Colors.green[800]
-                      : Colors.red[800],
-                  fontSize: 12,
+              builder: (_) =>
+                  StudentDetailScreen(student: student))),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: color,
+                child: Text(
+                  student.nombres.isNotEmpty
+                      ? student.nombres[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18),
                 ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () => _confirmDelete(context, ref),
-            ),
-          ],
+              const SizedBox(width: 12),
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      student.nombreCompleto,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: Color(0xFF1A237E)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      student.codigo,
+                      style: TextStyle(
+                          fontSize: 11, color: Colors.grey[500]),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        _MiniChip(
+                          label: student.nivel.substring(0, 1).toUpperCase() +
+                              student.nivel.substring(1),
+                          color: color,
+                        ),
+                        const SizedBox(width: 4),
+                        _MiniChip(
+                          label:
+                              '${student.curso} - ${student.paralelo}',
+                          color: Colors.grey,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Estado + flecha
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: student.activo
+                          ? Colors.green[50]
+                          : Colors.red[50],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      student.activo ? 'Activo' : 'Inactivo',
+                      style: TextStyle(
+                        color: student.activo
+                            ? Colors.green[700]
+                            : Colors.red[700],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Icon(Icons.chevron_right,
+                      color: Colors.grey[400], size: 20),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Eliminar estudiante?'),
-        content: Text(
-          'Se eliminará a ${student.nombreCompleto}. '
-          'Esta acción no se puede deshacer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+class _MiniChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _MiniChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            fontSize: 10,
+            color: color.withOpacity(0.8),
+            fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+// ─── Vistas auxiliares ──────────────────────────────────────────
+
+class _EmptyView extends StatelessWidget {
+  final bool hasFilter;
+  const _EmptyView({required this.hasFilter});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_off_rounded,
+              size: 56, color: Colors.grey[300]),
+          const SizedBox(height: 12),
+          Text(
+            hasFilter
+                ? 'No se encontraron resultados'
+                : 'No hay estudiantes registrados',
+            style: TextStyle(color: Colors.grey[500], fontSize: 14),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              ref.read(studentProvider.notifier).delete(student.id);
-              Navigator.pop(ctx);
-            },
-            child: const Text(
-              'Eliminar',
-              style: TextStyle(color: Colors.white),
+          if (hasFilter) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Intenta con otro criterio de búsqueda',
+              style: TextStyle(color: Colors.grey[400], fontSize: 12),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
 }
 
-////////////////////////////////////////////////////////
-/// ✅ AHORA SÍ: FUERA DE TODAS LAS CLASES
-////////////////////////////////////////////////////////
-
-class _CredentialRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _CredentialRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+class _ErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorView({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF1565C0)),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-            ],
+          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const SizedBox(height: 12),
+          Text(message,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Reintentar'),
           ),
         ],
       ),
